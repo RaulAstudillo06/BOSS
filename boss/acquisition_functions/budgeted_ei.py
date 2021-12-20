@@ -65,10 +65,12 @@ class BudgetedExpectedImprovement(AnalyticAcquisitionFunction):
             design points `X`.
         """
         posterior = self._get_posterior(X)
-        mean = posterior.mean  # (b) x 1
-        sigma = posterior.variance.sqrt().clamp_min(1e-6)  # (b) x 1
+        mean = posterior.mean.squeeze(dim=-1)  # (b) x 1
+        sigma = posterior.variance.clamp_min(1e-6).sqrt().squeeze(dim=-1)  # (b) x 1
 
         # (b) x 1
+        # print(mean.shape)
+        # print(self.best_f.shape)
         u = (mean - self.best_f) / sigma
 
         if not self.maximize:
@@ -80,10 +82,12 @@ class BudgetedExpectedImprovement(AnalyticAcquisitionFunction):
         pdf_u = torch.exp(standard_normal.log_prob(u))
         cdf_u = standard_normal.cdf(u)
         ei = sigma * (pdf_u + u * cdf_u)  # (b) x 1
-        # (b) x 1
-        cost = self.cost_function(X)
-        smooth_feas_ind = soft_eval_constraint(cost - self.budget)
-        bc_ei = ei.mul(smooth_feas_ind)  # (b) x 1
+        # print(ei.shape)
+        cost = self.cost_function(X)  # (b) x 1 x 1
+        smooth_feas_ind = soft_eval_constraint(cost - self.budget)  # (b) x 1 x 1
+        bc_ei = ei.mul(smooth_feas_ind.squeeze(dim=-1))  # (b) x 1
+        # print(X.shape)
+        # print(bc_ei.shape)
         return bc_ei.squeeze(dim=-1)
 
 

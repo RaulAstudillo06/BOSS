@@ -236,7 +236,7 @@ def optimize_acqf_and_get_suggested_point(
     num_restarts = 10 * input_dim * batch_size
 
     if algo_params.get("suggested_x_full_tree") is not None:
-        batch_initial_conditions = custom_warmstart_multistep(
+        batch_initial_conditions = warmstart_multistep(
             acq_function=acq_func,
             bounds=bounds,
             num_restarts=num_restarts,
@@ -255,7 +255,7 @@ def optimize_acqf_and_get_suggested_point(
         raw_samples=raw_samples,
         options={
             "batch_limit": 2,
-            "maxiter": 200,
+            "maxiter": 100,
             "nonnegative": True,
             "method": "L-BFGS-B",
         },

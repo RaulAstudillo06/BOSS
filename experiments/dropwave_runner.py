@@ -8,6 +8,7 @@ from botorch.test_functions.synthetic import DropWave
 from torch import Tensor
 
 torch.set_default_dtype(torch.float64)
+torch.autograd.set_detect_anomaly(True)
 debug._set_state(True)
 
 script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -27,14 +28,27 @@ def objective_function(X: Tensor) -> Tensor:
 
 
 def cost_function_callable(reference_point: Tensor, X: Tensor) -> Tensor:
-    cost_X = torch.cdist(
-        reference_point.view(
-            torch.Size([1]) + reference_point.shape[:-2] + reference_point.shape[-1:]
-        ),
-        X.view(torch.Size([1]) + X.shape[:-2] + X.shape[-1:]),
+    # print("TEST 1 BEGINS")
+    # print(reference_point.shape)
+    # print(X.shape)
+    # print(X.shape[:1] + torch.Size([-1] * (len(X.shape) - 1)))
+    cost_X = (
+        10.24
+        * (
+            torch.linalg.norm(
+                reference_point.unsqueeze(0).repeat(
+                    X.shape[:1] + torch.Size([1] * (len(X.shape) - 1))
+                )
+                - X,
+                dim=-1,
+                keepdim=True,
+            )
+        )
+        + 1.0
     )
-    cost_X *= 10.24
-    cost_X += 0.1
+    # print(cost_X.shape)
+    # print("TEST 1 ENDS")
+    # print(cost_X)
     return cost_X
 
 
@@ -44,7 +58,7 @@ cost_function = GenericCostFunction(cost_function_callable)
 # Algos
 algo = "B-MS-EI"
 if algo == "B-MS-EI":
-    algo_params = {"lookahead_n_fantasies": [1, 1, 1]}
+    algo_params = {"lookahead_n_fantasies": [1, 1]}
 else:
     algo_params = {}
 
@@ -67,5 +81,5 @@ experiment_manager(
     cost_function=cost_function,
     input_dim=2,
     n_init_evals=6,
-    budget=10.0,
+    budget=50.0,
 )

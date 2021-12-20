@@ -184,6 +184,7 @@ def _step(
     Returns:
         A `b`-dim tensor containing the multi-step value of the design `X`.
     """
+    # print(step_index)
     X = Xs[0]
     if sample_weights is None:  # only happens in the initial step
         sample_weights = torch.ones(*X.shape[:-2], device=X.device, dtype=X.dtype)
@@ -195,7 +196,7 @@ def _step(
         X=X,
         objective=objective,
         inner_sampler=inner_samplers[0],
-        arg_fac=valfunc_argfacs[0](budget),
+        arg_fac=valfunc_argfacs[0](cost_function, budget),
     )
     if stage_val is not None:  # update running value
         # if not None, running_val has shape f_{i-1} x ... x f_1 x batch_shape
@@ -251,15 +252,16 @@ def _step(
 class budgeted_ei_argfac(Module):
     r"""Extract the best observed value and reamaining budget from the model."""
 
-    def __init__(self, budget: Union[float, Tensor]) -> None:
+    def __init__(self, cost_function: Callable, budget: Union[float, Tensor]) -> None:
         super().__init__()
+        self.cost_function = cost_function
         self.budget = budget
 
     def forward(self, model: Model, X: Tensor) -> Dict[str, Any]:
-        y = torch.transpose(model.train_targets, -2, -1)
-        y_original_scale = model.outcome_transform.untransform(y)[0]
-        obj_vals = y_original_scale[..., 0]
+        obj_vals_transformed = model.train_targets
+        obj_vals = model.outcome_transform.untransform(obj_vals_transformed)[0]
         params = {
+            "cost_function": self.cost_function,
             "best_f": obj_vals.max(dim=-1, keepdim=True).values,
             "budget": self.budget,
         }

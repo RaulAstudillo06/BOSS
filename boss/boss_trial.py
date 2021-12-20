@@ -18,7 +18,6 @@ from boss.acquisition_functions.budgeted_multi_step_ei import (
 from boss.utils import (
     fit_model,
     generate_initial_design,
-    get_suggested_budget,
     optimize_acqf_and_get_suggested_point,
 )
 
@@ -124,40 +123,22 @@ def boss_trial(
 
         # New suggested point
         t0 = time.time()
-        try:
-            new_x = get_new_suggested_point(
-                algo=algo,
-                X=X,
-                Y=Y,
-                costs=costs,
-                cost_function=cost_function,
-                budget_left=budget - cumulative_cost,
-                algo_params=algo_params,
-            )
-        except:
-            if ignore_failures:
-                print(
-                    "An error ocurred when computing the next point to evaluate. Instead, a point will be chosen uniformly at random."
-                )
-                new_x = get_new_suggested_point(
-                    algo="Random",
-                    X=X,
-                    Y=Y,
-                    costs=costs,
-                    budget_left=budget - cumulative_cost,
-                    algo_params=algo_params,
-                )
-            else:
-                raise Error(
-                    "An error ocurred when computing the next point to evaluate."
-                )
+        new_x = get_new_suggested_point(
+            algo=algo,
+            X=X,
+            Y=Y,
+            costs=costs,
+            cost_function=cost_function,
+            budget_left=budget - cumulative_cost,
+            algo_params=algo_params,
+        )
 
         t1 = time.time()
         runtimes.append(t1 - t0)
 
         # Evaluate objective at new point
         objective_new_x = objective_function(new_x)
-        cost_new_x = cost_function(new_x)
+        cost_new_x = cost_function(new_x.unsqueeze(0)).item()
         # Update training data
         X = torch.cat([X, new_x], 0)
         Y = torch.cat([Y, objective_new_x], 0)
@@ -165,7 +146,7 @@ def boss_trial(
         cost_function = cost_function.update_reference_point(X[[-1]])
 
         # Update historical best observed objective values and cumulative cost
-        cumulative_cost += cost_new_x.item()
+        cumulative_cost += cost_new_x
         best_obs_val = Y.max().item()
         hist_best_obs_vals.append(best_obs_val)
         print("Best value found so far: " + str(best_obs_val))
@@ -224,10 +205,11 @@ def get_new_suggested_point(
         )
 
         # Acquisition function
+        budget = torch.clone(torch.tensor(budget_left)).clamp_max(10.0)
         acquisition_function = BudgetedMultiStepExpectedImprovement(
             model=model,
             cost_function=cost_function,
-            budget=torch.clone(torch.tensor(budget_left)),
+            budget=budget,
             num_fantasies=algo_params.get("lookahead_n_fantasies"),
         )
     elif algo == "EI":
