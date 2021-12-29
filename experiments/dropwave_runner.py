@@ -56,9 +56,9 @@ cost_function = GenericCostFunction(cost_function_callable)
 
 
 # Algos
-algo = "B-MS-EI"
+algo = "EI"
 if algo == "B-MS-EI":
-    algo_params = {"lookahead_n_fantasies": [1, 1]}
+    algo_params = {"lookahead_n_fantasies": [1, 1, 1]}
 else:
     algo_params = {}
 
@@ -74,7 +74,7 @@ experiment_manager(
     problem="dropwave",
     algo=algo,
     algo_params=algo_params,
-    restart=False,
+    restart=True,
     first_trial=first_trial,
     last_trial=last_trial,
     objective_function=objective_function,

@@ -15,7 +15,7 @@ problem_results_dir = script_dir + "/results/" + problem + "/"
 print(problem)
 for a, algo in enumerate(algos):
     print(algo)
-    if algo == "B-MS-EI" in algo:
+    if "B-MS-EI" in algo:
         algo_id = algo + "_" + str(int(budget))
     else:
         algo_id = algo
@@ -23,17 +23,18 @@ for a, algo in enumerate(algos):
     algo_results_dir = problem_results_dir + algo_id + "/"
     for trial in range(1, n_trials + 1):
         # print(trial)
+        # X = np.loadtxt(algo_results_dir + "X/X_" + str(trial) + ".txt")
         try:
             X = np.loadtxt(algo_results_dir + "X/X_" + str(trial) + ".txt")
             if X.ndim == 1:
                 X = np.expand_dims(X, axis=-1)
             input_dim = X.shape[1]
             n_init_evals = 2 * (input_dim + 1)
-            cost_X = np.loadtxt(
-                algo_results_dir + "cost_X/cost_X_" + str(trial) + ".txt"
+            costs = np.loadtxt(
+                algo_results_dir + "costs/costs_" + str(trial) + ".txt"
             )
-            init_cost = sum(cost_X[:n_init_evals])
-            total_cost = sum(cost_X)
+            init_cost = sum(costs[:n_init_evals])
+            total_cost = sum(costs)
             if total_cost - init_cost < budget:
                 print("Trial {} is not complete yet.".format(trial))
                 print("Current cumulative cost is: {}".format(total_cost - init_cost))

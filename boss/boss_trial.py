@@ -60,14 +60,12 @@ def boss_trial(
             # Current available evaluations
             X = torch.tensor(np.loadtxt(results_folder + "X/X_" + str(trial) + ".txt"))
             Y = torch.tensor(np.loadtxt(results_folder + "Y/Y_" + str(trial) + ".txt"))
-            costs = torch.tensor(
-                np.loadtxt(results_folder + "costs/costs_" + str(trial) + ".txt")
-            )
 
             # Historical best observed objective values and running times
             hist_best_obs_vals = list(
                 np.loadtxt(results_folder + "best_obs_vals_" + str(trial) + ".txt")
             )
+            costs = list(np.loadtxt(results_folder + "costs/costs_" + str(trial) + ".txt"))
             runtimes = list(
                 np.loadtxt(results_folder + "runtimes/runtimes_" + str(trial) + ".txt")
             )
@@ -91,6 +89,7 @@ def boss_trial(
 
             # Historical best observed objective values and running times
             hist_best_obs_vals = [best_obs_val]
+            costs = []
             runtimes = []
 
             iteration = 0
@@ -105,7 +104,7 @@ def boss_trial(
 
         # Historical best observed objective values and runtimes
         hist_best_obs_vals = [best_obs_val]
-        costs = [0.0]
+        costs = []
         runtimes = []
 
         iteration = 0
