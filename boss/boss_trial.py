@@ -65,13 +65,16 @@ def boss_trial(
             hist_best_obs_vals = list(
                 np.loadtxt(results_folder + "best_obs_vals_" + str(trial) + ".txt")
             )
-            costs = list(np.loadtxt(results_folder + "costs/costs_" + str(trial) + ".txt"))
+            costs = list(
+                np.loadtxt(results_folder + "costs/costs_" + str(trial) + ".txt")
+            )
             runtimes = list(
                 np.loadtxt(results_folder + "runtimes/runtimes_" + str(trial) + ".txt")
             )
 
-            # Current best observed objective value
+            # Current best observed objective value and cumulative cost
             best_obs_val = torch.tensor(hist_best_obs_vals[-1])
+            cumulative_cost = sum(costs)
 
             iteration = len(hist_best_obs_vals) - 1
             print("Restarting experiment from available data.")
@@ -84,8 +87,9 @@ def boss_trial(
             )
             Y = objective_function(X)
 
-            # Current best objective value
+            # Current best observed objective value and cumulative cost
             best_obs_val = Y.max().item()
+            cumulative_cost = 0.0
 
             # Historical best observed objective values and running times
             hist_best_obs_vals = [best_obs_val]
@@ -99,8 +103,10 @@ def boss_trial(
             num_samples=n_init_evals, input_dim=input_dim, seed=trial
         )
         Y = objective_function(X)
-        # Current best objective value
+
+        # Current best observed objective value and cumulative cost
         best_obs_val = Y.max().item()
+        cumulative_cost = 0.0
 
         # Historical best observed objective values and runtimes
         hist_best_obs_vals = [best_obs_val]
@@ -109,7 +115,6 @@ def boss_trial(
 
         iteration = 0
 
-    cumulative_cost = 0.0
     algo_params["init_budget"] = budget
     cost_function = cost_function.update_reference_point(X[[-1]])
 
