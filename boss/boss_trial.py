@@ -15,6 +15,7 @@ from torch import Tensor
 from boss.acquisition_functions.budgeted_multi_step_ei import (
     BudgetedMultiStepExpectedImprovement,
 )
+from boss.budget_scheduling_strategies import largest_one_step_cost
 from boss.utils import (
     fit_model,
     generate_initial_design,
@@ -134,6 +135,7 @@ def boss_trial(
             costs=costs,
             cost_function=cost_function,
             budget_left=budget - cumulative_cost,
+            input_dim=input_dim,
             algo_params=algo_params,
         )
 
@@ -192,6 +194,7 @@ def get_new_suggested_point(
     costs: Tensor,
     cost_function: Callable,
     budget_left: float,
+    input_dim: int,
     algo_params: Optional[Dict] = None,
 ) -> Tensor:
 
@@ -209,7 +212,9 @@ def get_new_suggested_point(
         )
 
         # Acquisition function
-        budget = torch.clone(torch.tensor(budget_left)).clamp_max(10.0)
+        budget = largest_one_step_cost(
+            cost_function, budget_left, input_dim
+        )  # torch.clone(torch.tensor(budget_left)).clamp_max(10.0)
         acquisition_function = BudgetedMultiStepExpectedImprovement(
             model=model,
             cost_function=cost_function,
